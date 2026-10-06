@@ -1,0 +1,205 @@
+"""
+Course Code & Name: ITT212 Duo 7
+Assignment Title: Caesar Cipher Encryption and Decryption System (Pair)
+Academic Year: 2026 – 2027
+Description: A robust, menu-driven prototype designed to demonstrate message 
+             encryption, decryption, encryption history tracking, and 
+             brute-force vulnerability identification.
+"""
+
+import sys
+
+# Global list of dictionaries to maintain session logs automatically
+encryption_history = []
+
+
+def caesar_cipher_core(text: str, shift: int) -> str:
+    """
+    Core algorithm that performs Caesar Cipher transformations.
+    
+    Handles uppercase and lowercase character preservation, leaves symbols/digits
+    intact, and standardizes large/negative shifts using modular arithmetic.
+    """
+    transformed_chars = []
+    
+    # Normalize the shift to be within the 0-25 alphabetic boundary
+    normalized_shift = shift % 26
+    
+    for char in text:
+        if char.isalpha():
+            # Establish ASCII base depending on casing
+            ascii_base = 65 if char.isupper() else 97
+            # Map ASCII value to 0-25 range, apply shift, wrap around, and restore to ASCII
+            new_char = chr((ord(char) - ascii_base + normalized_shift) % 26 + ascii_base)
+            transformed_chars.append(new_char)
+        else:
+            # Leave non-alphabetic characters completely unaltered
+            transformed_chars.append(char)
+            
+    return "".join(transformed_chars)
+
+
+def get_validated_string(prompt: str) -> str:
+    """
+    Prompts user for input and ensures the string is not empty or pure whitespace.
+    """
+    while True:
+        user_input = input(prompt).strip()
+        if user_input:
+            return user_input
+        print("[ERROR] Input cannot be blank. Please enter valid text.")
+
+
+def get_validated_int(prompt: str) -> int:
+    """
+    Ensures user provides a cleanly formatted integer. Re-prompts on error.
+    """
+    while True:
+        try:
+            return int(input(prompt))
+        except ValueError:
+            print("[ERROR] Invalid numeric format. Please enter a whole integer value.")
+
+
+def log_operation(original: str, shift: int, operation: str, result: str) -> None:
+    """
+    Appends an operation transaction safely into the session-wide data structure.
+    """
+    encryption_history.append({
+        "original": original,
+        "shift": shift,
+        "operation": operation,
+        "result": result
+    })
+
+
+def run_encrypt_feature() -> None:
+    """
+    FEATURE 1: Interactively handles plaintext input and records the encrypted result.
+    """
+    print("\n--- FEATURE 1: ENCRYPT A MESSAGE ---")
+    plain_text = get_validated_string("Enter the plain text message to encrypt: ")
+    shift = get_validated_int("Enter the shift key pattern (integer): ")
+    
+    cipher_text = caesar_cipher_core(plain_text, shift)
+    
+    print(f"\n[SUCCESS] Encrypted Result: {cipher_text}")
+    log_operation(plain_text, shift, "Encryption", cipher_text)
+
+
+def run_decrypt_feature() -> None:
+    """
+    FEATURE 2: Reuses core encryption logic by passing a negative directional shift inversion.
+    """
+    print("\n--- FEATURE 2: DECRYPT A MESSAGE ---")
+    cipher_text = get_validated_string("Enter the encrypted cipher text to decrypt: ")
+    shift = get_validated_int("Enter the known shift key pattern: ")
+    
+    # Decryption is functionally identical to shifting backward
+    decrypted_text = caesar_cipher_core(cipher_text, -shift)
+    
+    print(f"\n[SUCCESS] Decrypted Result: {decrypted_text}")
+    log_operation(cipher_text, shift, "Decryption", decrypted_text)
+
+
+def run_brute_force_feature() -> None:
+    """
+    FEATURE 3: Simulates programmatic cracking against weak cryptographic parameters (Shifts 1-10).
+    Exposes lack of complexity by clearly listing candidate iterations side-by-side.
+    """
+    print("\n--- FEATURE 3: BRUTE FORCE ATTACK SIMULATION ---")
+    cipher_text = get_validated_string("Enter the intercepted cipher text to attack: ")
+    
+    print("\n==================================================")
+    print(f"{'SHIFT':<8} | {'DECRYPTED CANDIDATE TEXT'}")
+    print("==================================================")
+    
+    for prospective_shift in range(1, 11):
+        # Shifting backwards to test decryptions
+        candidate_text = caesar_cipher_core(cipher_text, -prospective_shift)
+        print(f"Shift {prospective_shift:<3} | {candidate_text}")
+        
+    print("==================================================")
+    print("\nVULNERABILITY ANALYSIS NOTE:")
+    print("This attack demonstrates the structural weakness of simple substitution ciphers.")
+    print("Because the English language maintains static linguistic structures and the entire")
+    print("keyspace shown above is exceptionally small, a human observer can easily scan")
+    print("the output column and isolate the readable, valid plaintext message instantly.")
+
+
+def run_history_feature() -> None:
+    """
+    FEATURE 4: Displays a neatly tabular, formatted ledger summarizing all previous session events.
+    """
+    print("\n--- FEATURE 4: ENCRYPTION AND DECRYPTION HISTORY ---")
+    
+    if not encryption_history:
+        print("[INFO] No transactions have been executed during this user session.")
+        return
+        
+    print("\n" + "=" * 95)
+    print(f"{'ID':<4} | {'OPERATION':<12} | {'SHIFT':<6} | {'INPUT MESSAGE':<30} | {'OUTPUT RESULT':<30}")
+    print("=" * 95)
+    
+    for idx, item in enumerate(encryption_history, start=1):
+        # Truncate strings gracefully if they exceed column display allocations
+        orig_trunc = (item['original'][:27] + '...') if len(item['original']) > 27 else item['original']
+        res_trunc = (item['result'][:27] + '...') if len(item['result']) > 27 else item['result']
+        
+        print(f"{idx:<4} | {item['operation']:<12} | {item['shift']:<6} | {orig_trunc:<30} | {res_trunc:<30}")
+        
+    print("=" * 95)
+
+
+def terminate_application() -> None:
+    """
+    FEATURE 5: Gracefully processes user departure with explicit confirmation routines.
+    """
+    print("\n--- FEATURE 5: EXIT SYSTEM ---")
+    confirm = input("Are you sure you want to terminate the application? (y/n): ").strip().lower()
+    if confirm == 'y':
+        print("\n[NOTICE] Closing secure communication channels... Session Cleared.")
+        print("Thank you for using the UCC Caesar Cipher Prototype Application. Goodbye!")
+        sys.exit(0)
+    else:
+        print("[INFO] Termination canceled. Returning back to main menu interface.")
+
+
+def main_menu_loop() -> None:
+    """
+    Primary orchestration menu loop. Dispatches procedures based on validated options.
+    """
+    while True:
+        print("\n" + "=" * 50)
+        print("     DUO 7 CAESAR CIPHER CRYPTOGRAPHIC SYSTEM     ")
+        print("=" * 50)
+        print("1. Encrypt a Message")
+        print("2. Decrypt a Message")
+        print("3. Simulate Brute-Force Attack (Shifts 1-10)")
+        print("4. View Session Encryption History")
+        print("5. Exit System")
+        print("=" * 50)
+        
+        choice = input("Select a menu option (1-5): ").strip()
+        
+        if choice == "1":
+            run_encrypt_feature()
+        elif choice == "2":
+            run_decrypt_feature()
+        elif choice == "3":
+            run_brute_force_feature()
+        elif choice == "4":
+            run_history_feature()
+        elif choice == "5":
+            terminate_application()
+        else:
+            print("[ERROR] Selection out of bounds. Please input a choice between 1 and 5.")
+
+
+if __name__ == "__main__":
+    try:
+        main_menu_loop()
+    except KeyboardInterrupt:
+        # Handles unplanned forceful terminations smoothly without system traceback spikes
+        print("\n\n[WARNING] Forced termination detected. Exiting system context cleanly.")
+        sys.exit(0)
